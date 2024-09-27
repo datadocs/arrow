@@ -83,18 +83,26 @@ export const closureTask = ((cache) => memoizeTask(cache, async function closure
         );
 
         const res = new PassThrough();
-        const req = https.request(
-            new URL(`https://raw.githubusercontent.com/google/closure-compiler/v${closureCompilerVer}/${path}`),
-            (res_) => {
-                if (res_.statusCode === 200) {
-                    res_.pipe(res);
-                } else {
-                    res.end();
+        
+        // git clone --depth=1 --branch v20240317 https://github.com/google/closure-compiler.git
+        const localFile = Path.resolve('closure-compiler', path);
+        if (fs.existsSync(localFile)) {
+            const req = fs.createReadStream(localFile);
+            req.pipe(res);
+            req.on('error', (e) => res.emit('error', e));
+        } else {
+            const req = https.request(
+                new URL(`https://raw.githubusercontent.com/google/closure-compiler/v${closureCompilerVer}/${path}`),
+                (res_) => {
+                    if (res_.statusCode === 200) {
+                        res_.pipe(res);
+                    } else {
+                        res.end();
+                    }
                 }
-            }
-        );
-
-        req.on('error', (e) => res.emit('error', e)).end();
+            );
+            req.on('error', (e) => res.emit('error', e)).end();
+        }
 
         return observableFromStreams(res, fs.createWriteStream(Path.join(out, path))).toPromise();
     }));
