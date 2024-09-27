@@ -120,6 +120,7 @@ export class VectorLoader extends Visitor {
         return makeData({ type, length, nullCount, nullBitmap: this.readNullBitmap(type, nullCount), data: this.readData(type.indices), dictionary: this.readDictionary(type) });
     }
     public visitInterval<T extends type.Interval>(type: T, { length, nullCount } = this.nextFieldNode()) {
+        // console.log(new Error('trace2'));
         return makeData({ type, length, nullCount, nullBitmap: this.readNullBitmap(type, nullCount), data: this.readData(type) });
     }
     public visitDuration<T extends type.Duration>(type: T, { length, nullCount } = this.nextFieldNode()) {
@@ -165,6 +166,7 @@ export class JSONVectorLoader extends VectorLoader {
     }
     protected readData<T extends DataType>(type: T, { offset } = this.nextBufferRange()) {
         const { sources } = this;
+        // console.error(type, sources, offset)
         if (DataType.isTimestamp(type)) {
             return toArrayBufferView(Uint8Array, Int64.convertArray(sources[offset] as string[]));
         } else if ((DataType.isInt(type) || DataType.isTime(type)) && type.bitWidth === 64 || DataType.isDuration(type)) {
